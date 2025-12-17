@@ -1,0 +1,63 @@
+####################################
+# .NET / ASP.NET Core
+####################################
+
+# Build results
+bin/
+obj/
+
+# Compiled files
+*.dll
+*.exe
+*.pdb
+
+# Rider / VS / VS Code
+.vs/
+.vscode/
+.idea/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# ASP.NET Core
+appsettings.*.json
+!appsettings.Development.json
+
+# Logs
+*.log
+
+# Static Web Assets
+staticwebassets/
+staticwebassets.build.json
+staticwebassets.build.json.cache
+staticwebassets.removed.txt
+staticwebassets.references.upToDateCheck.txt
+
+# Cache files
+*.cache
+*.tmp
+
+# Publish output
+publish/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+####################################
+# Node / Frontend (si aplica)
+####################################
+node_modules/
+
+####################################
+# Test results
+####################################
+TestResults/
+
+####################################
+# Coverage
+####################################
+coverage/
