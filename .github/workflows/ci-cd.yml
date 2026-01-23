@@ -24,7 +24,7 @@ jobs:
           dotnet-version: "8.0.x"
 
       - name: Restore
-        run: dotnet restore ./BootcampCLT.sln
+        run: dotnet restore api.bootcamp.clt/Api.BootCamp.sln
 
       - name: Build
         run: dotnet build ./BootcampCLT.sln -c Release --no-restore
