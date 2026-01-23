@@ -40,7 +40,7 @@ jobs:
 
       - name: Build and Push image
         run: |
-          docker build -t kiaratorales/bootcampclt-api:${{ steps.meta.outputs.tag }} .
+          docker build \ -f api.bootcamp.clt/Dockerfile \ -t kiaratorales/bootcampclt-api:${{ steps.meta.outputs.tag }} \ api.bootcamp.clt 
           docker push kiaratorales/bootcampclt-api:${{ steps.meta.outputs.tag }}
 
   cd:
