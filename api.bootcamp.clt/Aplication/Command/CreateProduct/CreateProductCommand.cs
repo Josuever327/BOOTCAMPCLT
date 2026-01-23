@@ -11,3 +11,5 @@ public record CreateProductoCommand(
     int CategoriaId,
     int CantidadStock
 ) : IRequest<ProductoResponse>;
+
+/*Prueba commit*/
