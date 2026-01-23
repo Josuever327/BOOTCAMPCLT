@@ -52,7 +52,7 @@ jobs:
 
       - name: Deploy with Helm to Minikube
         working-directory: k8s/helm
-        shell: cmd
+        shell: powershell
         run: |
           helm upgrade --install bootcamp-api . --set image.tag=${{ needs.ci.outputs.image_tag }}
           kubectl rollout status deployment/bootcamp-api -n bootcampkiara --timeout=120s
