@@ -1,24 +1,22 @@
-﻿using MediatR;
-using Microsoft.EntityFrameworkCore;
-using Api.BootCamp.Api.Response;
-using Api.BootCamp.Infrastructura.Context;
+﻿using Api.BootCamp.Api.Response;
+using Api.BootCamp.Aplication.Interfaces;
 using Api.BootCamp.Aplication.Query.GetProductById;
+using MediatR;
 
 namespace Api.BootCamp.Aplication.Query.GetProductByHandler;
 
 public class GetProductoByIdHandler : IRequestHandler<GetProductoByIdQuery, ProductoResponse?>
 {
-    private readonly PostegresDbContext _context;
+    private readonly IProductoRepository _repository;
 
-    public GetProductoByIdHandler(PostegresDbContext context)
+    public GetProductoByIdHandler(IProductoRepository repository)
     {
-        _context = context;
+        _repository = repository;
     }
 
     public async Task<ProductoResponse?> Handle(GetProductoByIdQuery request, CancellationToken cancellationToken)
     {
-        var entity = await _context.Productos.AsNoTracking()
-            .FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken);
+        var entity = await _repository.GetByIdAsync(request.Id, cancellationToken);
 
         if (entity is null)
             return null;
@@ -36,5 +34,4 @@ public class GetProductoByIdHandler : IRequestHandler<GetProductoByIdQuery, Prod
             entity.CantidadStock
         );
     }
-
 }

@@ -1,51 +1,64 @@
 ﻿using Api.BootCamp.Api.Response;
-using Api.BootCamp.Infrastructura.Context;
+using Api.BootCamp.Aplication.Interfaces;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Api.BootCamp.Aplication.Command.PatchProducto;
 
 public class PatchProductoHandler : IRequestHandler<PatchProductoCommand, ProductoResponse?>
 {
-    private readonly PostegresDbContext _context;
+    private readonly IProductoRepository _repository;
 
-    public PatchProductoHandler(PostegresDbContext context)
+    private readonly ILogger<PatchProductoHandler> _logger;
+
+    public PatchProductoHandler(
+        IProductoRepository repository,
+        ILogger<PatchProductoHandler> logger)
     {
-        _context = context;
+        _repository = repository;
+        _logger = logger;
     }
 
-    public async Task<ProductoResponse?> Handle( PatchProductoCommand request,  CancellationToken cancellationToken)
+
+    public async Task<ProductoResponse?> Handle(PatchProductoCommand request, CancellationToken cancellationToken)
     {
-        var entity = await _context.Productos
-            .FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken);
+        request.Validate();
+        _logger.LogInformation(
+    "Patch producto Id={Id}",
+    request.Id
+);
 
+        var entity = await _repository.GetByIdAsync(request.Id, cancellationToken);
+       
         if (entity is null)
+        {
+            _logger.LogWarning(
+                "Patch fallido. Producto no encontrado Id={Id}",
+                request.Id
+            );
             return null;
-
-        if (request.Codigo is not null)
-            entity.Codigo = request.Codigo;
-
-        if (request.Nombre is not null)
-            entity.Nombre = request.Nombre;
-
-        if (request.Descripcion is not null)
-            entity.Descripcion = request.Descripcion;
-
-        if (request.Precio.HasValue)
-            entity.Precio = request.Precio.Value;
-
-        if (request.Activo.HasValue)
-            entity.Activo = request.Activo.Value;
+        }
 
         if (request.CategoriaId.HasValue)
-            entity.CategoriaId = request.CategoriaId.Value;
+        {
+            var categoriaExiste = await _repository
+                .CategoriaExisteAsync(request.CategoriaId.Value, cancellationToken);
 
-        if (request.CantidadStock.HasValue)
-            entity.CantidadStock = request.CantidadStock.Value;
+            if (!categoriaExiste)
+                throw new ArgumentException("La categoría no existe");
+
+            entity.CategoriaId = request.CategoriaId.Value;
+        }
+
+        if (request.Codigo is not null) entity.Codigo = request.Codigo;
+        if (request.Nombre is not null) entity.Nombre = request.Nombre;
+        if (request.Descripcion is not null) entity.Descripcion = request.Descripcion;
+        if (request.Precio.HasValue) entity.Precio = request.Precio.Value;
+        if (request.Activo.HasValue) entity.Activo = request.Activo.Value;
+        if (request.CantidadStock.HasValue) entity.CantidadStock = request.CantidadStock.Value;
 
         entity.FechaActualizacion = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _repository.UpdateAsync(entity, cancellationToken);
 
         return new ProductoResponse(
             entity.Id,
@@ -60,4 +73,5 @@ public class PatchProductoHandler : IRequestHandler<PatchProductoCommand, Produc
             entity.CantidadStock
         );
     }
+
 }

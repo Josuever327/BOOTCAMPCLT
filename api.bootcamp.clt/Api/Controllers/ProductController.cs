@@ -1,8 +1,7 @@
-﻿using Api.BootCamp.Api.Response;
+﻿using Api.BootCamp.Api.Request;
+using Api.BootCamp.Api.Response;
 using Api.BootCamp.Aplication.Command.CreateProduct;
 using Api.BootCamp.Aplication.Command.DeleteProducto;
-using Api.BootCamp.Aplication.Command.PatchProducto;
-using Api.BootCamp.Aplication.Command.UpdateProduct;
 using Api.BootCamp.Aplication.Query.GetProductById;
 using Api.BootCamp.Aplication.Query.GetProductos;
 using MediatR;
@@ -11,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Api.BootCamp.Api.Controllers;
 
 [ApiController]
-[Route("v1/api/productos")]
+[Route("api/v1/productos")]
 public class ProductosController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -50,12 +49,22 @@ public class ProductosController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(ProductoResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Create([FromBody] CreateProductoCommand command)
+    public async Task<IActionResult> Create([FromBody] CreateProductoRequest request)
     {
+        var command = new CreateProductoCommand(
+            request.Codigo,
+            request.Nombre,
+            request.Descripcion,
+            request.Precio,
+            request.CategoriaId,
+            request.CantidadStock
+        );
+
         var result = await _mediator.Send(command);
 
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
+
 
     [HttpPut("{id:int}")]
     [ProducesResponseType(typeof(ProductoResponse), StatusCodes.Status200OK)]
@@ -63,10 +72,18 @@ public class ProductosController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update(
         [FromRoute] int id,
-       [FromBody] UpdateProductoCommand command)
+        [FromBody] UpdateProductoRequest request)
     {
-        if (id != command.Id)
-            return BadRequest();
+        var command = new UpdateProductoCommand(
+            id,
+            request.Codigo,
+            request.Nombre,
+            request.Descripcion,
+            request.Precio,
+            request.Activo,
+            request.CategoriaId,
+            request.CantidadStock
+        );
 
         var result = await _mediator.Send(command);
 
@@ -81,11 +98,19 @@ public class ProductosController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Patch(
-        [FromRoute] int id,
-         [FromBody] PatchProductoCommand command)
+    [FromRoute] int id,
+    [FromBody] PatchProductoRequest request)
     {
-        if (id != command.Id)
-            return BadRequest();
+        var command = new PatchProductoCommand(
+            id,
+            request.Codigo,
+            request.Nombre,
+            request.Descripcion,
+            request.Precio,
+            request.Activo,
+            request.CategoriaId,
+            request.CantidadStock
+        );
 
         var result = await _mediator.Send(command);
 
@@ -94,6 +119,7 @@ public class ProductosController : ControllerBase
 
         return Ok(result);
     }
+
 
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

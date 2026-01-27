@@ -1,38 +1,33 @@
 ﻿using Api.BootCamp.Api.Response;
-using Api.BootCamp.Infrastructura.Context;
+using Api.BootCamp.Aplication.Interfaces;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Api.BootCamp.Aplication.Query.GetProductos;
 
 public class GetProductosHandler : IRequestHandler<GetProductosQuery, IEnumerable<ProductoResponse>>
 {
-    private readonly PostegresDbContext _context;
+    private readonly IProductoRepository _repository;
 
-    public GetProductosHandler(PostegresDbContext context)
+    public GetProductosHandler(IProductoRepository repository)
     {
-        _context = context;
+        _repository = repository;
     }
 
     public async Task<IEnumerable<ProductoResponse>> Handle(GetProductosQuery request, CancellationToken cancellationToken)
     {
-        var query = _context.Productos.AsNoTracking();
+        var productos = await _repository.GetAllAsync(request.CategoriaId, cancellationToken);
 
-        if (request.CategoriaId.HasValue)
-            query = query.Where(p => p.CategoriaId == request.CategoriaId.Value);
-
-        return await query
-            .Select(p => new ProductoResponse(
-                p.Id,
-                p.Codigo,
-                p.Nombre,
-                p.Descripcion ?? string.Empty,
-                p.Precio,
-                p.Activo,
-                p.CategoriaId,
-                p.FechaCreacion,
-                p.FechaActualizacion,
-                p.CantidadStock))
-            .ToListAsync(cancellationToken);
+        return productos.Select(p => new ProductoResponse(
+            p.Id,
+            p.Codigo,
+            p.Nombre,
+            p.Descripcion ?? string.Empty,
+            p.Precio,
+            p.Activo,
+            p.CategoriaId,
+            p.FechaCreacion,
+            p.FechaActualizacion,
+            p.CantidadStock
+        ));
     }
 }

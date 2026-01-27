@@ -1,26 +1,49 @@
 ﻿using Api.BootCamp.Api.Response;
-using Api.BootCamp.Aplication.Command.UpdateProduct;
-using Api.BootCamp.Infrastructura.Context;
+using Api.BootCamp.Aplication.Interfaces;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace api.bootcamp.clt.Application.Commands.UpdateProducto;
 
 public class UpdateProductoHandler : IRequestHandler<UpdateProductoCommand, ProductoResponse?>
 {
-    private readonly PostegresDbContext _context;
+    private readonly IProductoRepository _repository;
 
-    public UpdateProductoHandler(PostegresDbContext context)
+    private readonly ILogger<UpdateProductoHandler> _logger;
+
+    public UpdateProductoHandler(
+        IProductoRepository repository,
+        ILogger<UpdateProductoHandler> logger)
     {
-        _context = context;
+        _repository = repository;
+        _logger = logger;
     }
+
 
     public async Task<ProductoResponse?> Handle(UpdateProductoCommand request, CancellationToken cancellationToken)
     {
-        var entity = await _context.Productos.FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken);
+        request.Validate();
+        _logger.LogInformation(
+    "Actualizando producto Id={Id}",
+    request.Id
+);
 
+        var categoriaExiste = await _repository
+            .CategoriaExisteAsync(request.CategoriaId, cancellationToken);
+
+        if (!categoriaExiste)
+            throw new ArgumentException("La categoría no existe");
+
+        var entity = await _repository.GetByIdAsync(request.Id, cancellationToken);
+      
         if (entity is null)
+        {
+            _logger.LogWarning(
+                "Producto no encontrado. Id={Id}",
+                request.Id
+            );
             return null;
+        }
+
 
         entity.Codigo = request.Codigo;
         entity.Nombre = request.Nombre;
@@ -31,7 +54,7 @@ public class UpdateProductoHandler : IRequestHandler<UpdateProductoCommand, Prod
         entity.CantidadStock = request.CantidadStock;
         entity.FechaActualizacion = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _repository.UpdateAsync(entity, cancellationToken);
 
         return new ProductoResponse(
             entity.Id,
@@ -46,4 +69,5 @@ public class UpdateProductoHandler : IRequestHandler<UpdateProductoCommand, Prod
             entity.CantidadStock
         );
     }
+
 }

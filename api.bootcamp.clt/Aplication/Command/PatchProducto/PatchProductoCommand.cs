@@ -1,8 +1,6 @@
 ﻿using Api.BootCamp.Api.Response;
 using MediatR;
 
-namespace Api.BootCamp.Aplication.Command.PatchProducto;
-
 public record PatchProductoCommand(
     int Id,
     string? Codigo,
@@ -12,4 +10,17 @@ public record PatchProductoCommand(
     bool? Activo,
     int? CategoriaId,
     int? CantidadStock
-) : IRequest<ProductoResponse?>;
+) : IRequest<ProductoResponse?>
+{
+    public void Validate()
+    {
+        if (Id <= 0)
+            throw new ArgumentException("Id inválido");
+
+        if (Precio.HasValue && Precio <= 0)
+            throw new ArgumentException("Precio inválido");
+
+        if (CantidadStock.HasValue && CantidadStock < 0)
+            throw new ArgumentException("Stock inválido");
+    }
+}

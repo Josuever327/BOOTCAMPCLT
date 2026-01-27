@@ -1,21 +1,38 @@
 ﻿using Api.BootCamp.Api.Response;
+using Api.BootCamp.Aplication.Interfaces;
 using Api.BootCamp.Domain.Entity;
-using Api.BootCamp.Infrastructura.Context;
 using MediatR;
 
 namespace Api.BootCamp.Aplication.Command.CreateProduct;
 
 public class CreateProductoHandler : IRequestHandler<CreateProductoCommand, ProductoResponse>
 {
-    private readonly PostegresDbContext _context;
+    private readonly IProductoRepository _repository;
+    private readonly ILogger<CreateProductoHandler> _logger;
 
-    public CreateProductoHandler(PostegresDbContext context)
+    public CreateProductoHandler(
+        IProductoRepository repository,
+        ILogger<CreateProductoHandler> logger)
     {
-        _context = context;
+        _repository = repository;
+        _logger = logger;
     }
 
     public async Task<ProductoResponse> Handle(CreateProductoCommand request, CancellationToken cancellationToken)
     {
+        request.Validate();
+        _logger.LogInformation(
+    "Creando producto Codigo={Codigo}, CategoriaId={CategoriaId}",
+    request.Codigo,
+    request.CategoriaId
+);
+
+        var categoriaExiste = await _repository
+            .CategoriaExisteAsync(request.CategoriaId, cancellationToken);
+
+        if (!categoriaExiste)
+            throw new ArgumentException("La categoría no existe");
+
         var producto = new Producto
         {
             Codigo = request.Codigo,
@@ -28,8 +45,7 @@ public class CreateProductoHandler : IRequestHandler<CreateProductoCommand, Prod
             FechaCreacion = DateTime.UtcNow
         };
 
-        _context.Productos.Add(producto);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _repository.AddAsync(producto, cancellationToken);
 
         return new ProductoResponse(
             producto.Id,
@@ -43,5 +59,6 @@ public class CreateProductoHandler : IRequestHandler<CreateProductoCommand, Prod
             producto.FechaActualizacion,
             producto.CantidadStock
         );
+
     }
 }
