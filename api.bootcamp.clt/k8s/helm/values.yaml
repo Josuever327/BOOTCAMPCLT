@@ -17,7 +17,7 @@ service:
   targetPort: 8080
 
 postgres:
-  host: postgres-svc
+  host: postgres-svc.default.svc.cluster.local
   port: 5432
   database: hardwareCLT
   username: postgres
