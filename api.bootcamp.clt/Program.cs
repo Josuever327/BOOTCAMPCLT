@@ -1,5 +1,5 @@
 using Api.BootCamp.Aplication.Query.GetProductByHandler;
-using Api.BootCamp.Infrastructura.Context;
+using Api.BootCamp.Infraestructura.Context;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);

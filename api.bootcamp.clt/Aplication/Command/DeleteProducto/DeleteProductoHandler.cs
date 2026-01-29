@@ -1,4 +1,4 @@
-﻿using Api.BootCamp.Infrastructura.Context;
+﻿using Api.BootCamp.Infraestructura.Context;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 

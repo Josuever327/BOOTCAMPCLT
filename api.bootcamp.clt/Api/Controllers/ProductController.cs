@@ -10,8 +10,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Api.BootCamp.Api.Controllers;
 
+/// <summary>
+/// Controlador para la gestión de productos.
+/// </summary>
 [ApiController]
-[Route("v1/api/productos")]
+[Route("api/[controller]")]
 public class ProductosController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -21,90 +24,147 @@ public class ProductosController : ControllerBase
         _mediator = mediator;
     }
 
+    /// <summary>
+    /// Obtiene la lista de productos, opcionalmente filtrados por categoría.
+    /// </summary>
+    /// <param name="categoriaId">
+    /// Identificador de la categoría para filtrar los productos. Es opcional.
+    /// </param>
+    /// <returns>
+    /// Devuelve una colección de productos.
+    /// </returns>
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<ProductoResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> GetAll([FromQuery] int? categoriaId)
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<IEnumerable<ProductoResponse>>> GetAll(
+        [FromQuery] int? categoriaId)
     {
-        var result = await _mediator.Send(new GetProductosQuery(categoriaId));
+        if (categoriaId is <= 0)
+            return BadRequest("El categoriaId debe ser mayor a cero.");
 
-        if (!result.Any())
-            return NoContent();
+        var productos = await _mediator.Send(new GetProductosQuery(categoriaId));
 
-        return Ok(result);
+        return Ok(productos);
     }
 
+
+    /// <summary>
+    /// Obtiene un producto por su identificador.
+    /// </summary>
+    /// <param name="id">Identificador del producto.</param>
+    /// <returns>Producto encontrado.</returns>
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(ProductoResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetById([FromRoute] int id)
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ProductoResponse>> GetById([FromRoute] int id)
     {
-        var result = await _mediator.Send(new GetProductoByIdQuery(id));
+        if (id <= 0)
+            return BadRequest("El id debe ser mayor a cero.");
 
-        if (result is null)
+        var producto = await _mediator.Send(new GetProductoByIdQuery(id));
+
+        if (producto is null)
             return NotFound();
 
-        return Ok(result);
+        return Ok(producto);
     }
 
+    /// <summary>
+    /// Crea un nuevo producto.
+    /// </summary>
+    /// <param name="command">Datos del producto a crear.</param>
+    /// <returns>Producto creado.</returns>
     [HttpPost]
     [ProducesResponseType(typeof(ProductoResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Create([FromBody] CreateProductoCommand command)
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ProductoResponse>> Create(
+        [FromBody] CreateProductoCommand command)
     {
-        var result = await _mediator.Send(command);
+        var producto = await _mediator.Send(command);
 
-        return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+        return CreatedAtAction(
+            nameof(GetById),
+            new { id = producto.Id },
+            producto);
     }
 
+    /// <summary>
+    /// Actualiza completamente un producto existente.
+    /// </summary>
+    /// <param name="id">Identificador del producto.</param>
+    /// <param name="command">Datos actualizados del producto.</param>
+    /// <returns>Producto actualizado.</returns>
     [HttpPut("{id:int}")]
     [ProducesResponseType(typeof(ProductoResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Update(
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ProductoResponse>> Update(
         [FromRoute] int id,
-       [FromBody] UpdateProductoCommand command)
+        [FromBody] UpdateProductoCommand command)
     {
-        if (id != command.Id)
-            return BadRequest();
+        if (id <= 0 || id != command.Id)
+            return BadRequest("El id de la ruta no coincide con el cuerpo.");
 
-        var result = await _mediator.Send(command);
+        var producto = await _mediator.Send(command);
 
-        if (result is null)
+        if (producto is null)
             return NotFound();
 
-        return Ok(result);
+        return Ok(producto);
     }
 
+    /// <summary>
+    /// Actualiza parcialmente un producto existente.
+    /// </summary>
+    /// <param name="id">Identificador del producto.</param>
+    /// <param name="command">Datos parciales del producto.</param>
+    /// <returns>Producto actualizado.</returns>
     [HttpPatch("{id:int}")]
     [ProducesResponseType(typeof(ProductoResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Patch(
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ProductoResponse>> Patch(
         [FromRoute] int id,
-         [FromBody] PatchProductoCommand command)
+        [FromBody] PatchProductoCommand command)
     {
-        if (id != command.Id)
-            return BadRequest();
+        if (id <= 0 || id != command.Id)
+            return BadRequest("El id de la ruta no coincide con el cuerpo.");
 
-        var result = await _mediator.Send(command);
+        var producto = await _mediator.Send(command);
 
-        if (result is null)
+        if (producto is null)
             return NotFound();
 
-        return Ok(result);
+        return Ok(producto);
     }
 
+    /// <summary>
+    /// Elimina un producto por su identificador.
+    /// </summary>
+    /// <param name="id">Identificador del producto.</param>
+    /// <returns>Resultado de la eliminación.</returns>
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Delete([FromRoute] int id)
     {
-        var result = await _mediator.Send(new DeleteProductoCommand(id));
+        if (id <= 0)
+            return BadRequest("El id debe ser mayor a cero.");
 
-        if (!result)
+        var eliminado = await _mediator.Send(new DeleteProductoCommand(id));
+
+        if (!eliminado)
             return NotFound();
 
         return NoContent();
     }
 }
+

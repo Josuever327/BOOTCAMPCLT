@@ -1,7 +1,7 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Api.BootCamp.Api.Response;
-using Api.BootCamp.Infrastructura.Context;
+using Api.BootCamp.Infraestructura.Context;
 using Api.BootCamp.Aplication.Query.GetProductById;
 
 namespace Api.BootCamp.Aplication.Query.GetProductByHandler;

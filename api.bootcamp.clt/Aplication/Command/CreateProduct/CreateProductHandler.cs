@@ -1,21 +1,40 @@
 ﻿using Api.BootCamp.Api.Response;
 using Api.BootCamp.Domain.Entity;
-using Api.BootCamp.Infrastructura.Context;
+using Api.BootCamp.Aplication.Abstractions.Persistence;
+using Api.BootCamp.Aplication.Abstractions.Common;
+using Api.BootCamp.Aplication.Common.Exceptions;
+using Api.BootCamp.Aplication.Common.Mappings;
 using MediatR;
 
 namespace Api.BootCamp.Aplication.Command.CreateProduct;
 
-public class CreateProductoHandler : IRequestHandler<CreateProductoCommand, ProductoResponse>
+public class CreateProductoHandler
+    : IRequestHandler<CreateProductoCommand, ProductoResponse>
 {
-    private readonly PostegresDbContext _context;
+    private readonly IProductoRepository _productoRepository;
+    private readonly IDateTimeProvider _dateTime;
 
-    public CreateProductoHandler(PostegresDbContext context)
+    public CreateProductoHandler(
+        IProductoRepository productoRepository,
+        IDateTimeProvider dateTime)
     {
-        _context = context;
+        _productoRepository = productoRepository;
+        _dateTime = dateTime;
     }
 
-    public async Task<ProductoResponse> Handle(CreateProductoCommand request, CancellationToken cancellationToken)
+    public async Task<ProductoResponse> Handle(
+        CreateProductoCommand request,
+        CancellationToken cancellationToken)
     {
+        if (request.Precio <= 0)
+            throw new DomainException("El precio debe ser mayor a cero.");
+
+        if (await _productoRepository.ExistsByCodigoAsync(
+            request.Codigo, cancellationToken))
+        {
+            throw new DomainException("Ya existe un producto con ese código.");
+        }
+
         var producto = new Producto
         {
             Codigo = request.Codigo,
@@ -25,23 +44,11 @@ public class CreateProductoHandler : IRequestHandler<CreateProductoCommand, Prod
             CategoriaId = request.CategoriaId,
             CantidadStock = request.CantidadStock,
             Activo = true,
-            FechaCreacion = DateTime.UtcNow
+            FechaCreacion = _dateTime.UtcNow
         };
 
-        _context.Productos.Add(producto);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _productoRepository.AddAsync(producto, cancellationToken);
 
-        return new ProductoResponse(
-            producto.Id,
-            producto.Codigo,
-            producto.Nombre,
-            producto.Descripcion ?? string.Empty,
-            producto.Precio,
-            producto.Activo,
-            producto.CategoriaId,
-            producto.FechaCreacion,
-            producto.FechaActualizacion,
-            producto.CantidadStock
-        );
+        return producto.ToResponse();
     }
 }

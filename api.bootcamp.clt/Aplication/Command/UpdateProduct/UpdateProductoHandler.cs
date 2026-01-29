@@ -1,6 +1,6 @@
 ﻿using Api.BootCamp.Api.Response;
 using Api.BootCamp.Aplication.Command.UpdateProduct;
-using Api.BootCamp.Infrastructura.Context;
+using Api.BootCamp.Infraestructura.Context;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
