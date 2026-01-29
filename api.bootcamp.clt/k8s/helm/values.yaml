@@ -1,24 +1,27 @@
 ﻿replicaCount: 2
- 
+
 image:
   repository: kiaratorales/bootcampclt-api
   tag: "1.1"
   pullPolicy: IfNotPresent
+
 app:
   containerPort: 8080
   env:
     aspnetcoreEnvironment: Development
     applicationName: API-BOOTCAMP-KIARA
 
- 
 service:
   type: NodePort
   port: 80
   targetPort: 8080
- 
+
 postgres:
-  host: postgres-svc
+  host: postgres-svc.default.svc.cluster.local
   port: 5432
   database: hardwareCLT
   username: postgres
-  password: "a.123456"   # Para demo local. En equipos reales, no commitear.
+  password: "a.123456"
+
+seq:
+  serverUrl: http://seq.infra:80

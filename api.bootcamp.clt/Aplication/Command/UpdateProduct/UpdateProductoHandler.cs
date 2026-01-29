@@ -1,49 +1,64 @@
 ﻿using Api.BootCamp.Api.Response;
-using Api.BootCamp.Aplication.Command.UpdateProduct;
-using Api.BootCamp.Infraestructura.Context;
+using Api.BootCamp.Aplication.Interfaces;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
-namespace api.bootcamp.clt.Application.Commands.UpdateProducto;
-
-public class UpdateProductoHandler : IRequestHandler<UpdateProductoCommand, ProductoResponse?>
+namespace Api.BootCamp.Aplication.Command.UpdateProducto
 {
-    private readonly PostegresDbContext _context;
-
-    public UpdateProductoHandler(PostegresDbContext context)
+    public class UpdateProductoHandler : IRequestHandler<UpdateProductoCommand, ProductoResponse?>
     {
-        _context = context;
-    }
+        private readonly IProductoRepository _repository;
+        private readonly ILogger<UpdateProductoHandler> _logger;
 
-    public async Task<ProductoResponse?> Handle(UpdateProductoCommand request, CancellationToken cancellationToken)
-    {
-        var entity = await _context.Productos.FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken);
+        public UpdateProductoHandler(
+            IProductoRepository repository,
+            ILogger<UpdateProductoHandler> logger)
+        {
+            _repository = repository;
+            _logger = logger;
+        }
 
-        if (entity is null)
-            return null;
+        public async Task<ProductoResponse?> Handle(UpdateProductoCommand request, CancellationToken cancellationToken)
+        {
+            request.Validate();
 
-        entity.Codigo = request.Codigo;
-        entity.Nombre = request.Nombre;
-        entity.Descripcion = request.Descripcion;
-        entity.Precio = request.Precio;
-        entity.Activo = request.Activo;
-        entity.CategoriaId = request.CategoriaId;
-        entity.CantidadStock = request.CantidadStock;
-        entity.FechaActualizacion = DateTime.UtcNow;
+            _logger.LogInformation("Actualizando producto Id={Id}", request.Id);
 
-        await _context.SaveChangesAsync(cancellationToken);
+            if (!await _repository.CategoriaExisteAsync(request.CategoriaId, cancellationToken))
+            {
+                _logger.LogWarning("La categoría Id={CategoriaId} no existe", request.CategoriaId);
+                throw new ArgumentException("La categoría no existe");
+            }
 
-        return new ProductoResponse(
-            entity.Id,
-            entity.Codigo,
-            entity.Nombre,
-            entity.Descripcion ?? string.Empty,
-            entity.Precio,
-            entity.Activo,
-            entity.CategoriaId,
-            entity.FechaCreacion,
-            entity.FechaActualizacion,
-            entity.CantidadStock
-        );
+            var entity = await _repository.GetByIdAsync(request.Id, cancellationToken);
+            if (entity is null)
+            {
+                _logger.LogWarning("Producto no encontrado. Id={Id}", request.Id);
+                return null;
+            }
+
+            entity.Codigo = request.Codigo;
+            entity.Nombre = request.Nombre;
+            entity.Descripcion = request.Descripcion;
+            entity.Precio = request.Precio;
+            entity.Activo = request.Activo;
+            entity.CategoriaId = request.CategoriaId;
+            entity.CantidadStock = request.CantidadStock;
+            entity.FechaActualizacion = DateTime.UtcNow;
+
+            await _repository.UpdateAsync(entity, cancellationToken);
+
+            return new ProductoResponse(
+                entity.Id,
+                entity.Codigo,
+                entity.Nombre,
+                entity.Descripcion ?? string.Empty,
+                entity.Precio,
+                entity.Activo,
+                entity.CategoriaId,
+                entity.FechaCreacion,
+                entity.FechaActualizacion,
+                entity.CantidadStock
+            );
+        }
     }
 }

@@ -1,40 +1,45 @@
-﻿using MediatR;
-using Microsoft.EntityFrameworkCore;
 using Api.BootCamp.Api.Response;
-using Api.BootCamp.Infraestructura.Context;
+using Api.BootCamp.Aplication.Interfaces;
 using Api.BootCamp.Aplication.Query.GetProductById;
+using MediatR;
 
-namespace Api.BootCamp.Aplication.Query.GetProductByHandler;
-
-public class GetProductoByIdHandler : IRequestHandler<GetProductoByIdQuery, ProductoResponse?>
+namespace Api.BootCamp.Aplication.Query.GetProductoById
 {
-    private readonly PostegresDbContext _context;
-
-    public GetProductoByIdHandler(PostegresDbContext context)
+    public class GetProductoByIdHandler : IRequestHandler<GetProductoByIdQuery, ProductoResponse?>
     {
-        _context = context;
+        private readonly IProductoRepository _repository;
+        private readonly ILogger<GetProductoByIdHandler> _logger;
+
+        public GetProductoByIdHandler(IProductoRepository repository, ILogger<GetProductoByIdHandler> logger)
+        {
+            _repository = repository;
+            _logger = logger;
+        }
+
+        public async Task<ProductoResponse?> Handle(GetProductoByIdQuery request, CancellationToken cancellationToken)
+        {
+            _logger.LogInformation("Obteniendo producto por Id={Id}", request.Id);
+
+            var entity = await _repository.GetByIdAsync(request.Id, cancellationToken);
+
+            if (entity is null)
+            {
+                _logger.LogWarning("Producto no encontrado Id={Id}", request.Id);
+                return null;
+            }
+
+            return new ProductoResponse(
+                entity.Id,
+                entity.Codigo,
+                entity.Nombre,
+                entity.Descripcion ?? string.Empty,
+                entity.Precio,
+                entity.Activo,
+                entity.CategoriaId,
+                entity.FechaCreacion,
+                entity.FechaActualizacion,
+                entity.CantidadStock
+            );
+        }
     }
-
-    public async Task<ProductoResponse?> Handle(GetProductoByIdQuery request, CancellationToken cancellationToken)
-    {
-        var entity = await _context.Productos.AsNoTracking()
-            .FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken);
-
-        if (entity is null)
-            return null;
-
-        return new ProductoResponse(
-            entity.Id,
-            entity.Codigo,
-            entity.Nombre,
-            entity.Descripcion ?? string.Empty,
-            entity.Precio,
-            entity.Activo,
-            entity.CategoriaId,
-            entity.FechaCreacion,
-            entity.FechaActualizacion,
-            entity.CantidadStock
-        );
-    }
-
 }

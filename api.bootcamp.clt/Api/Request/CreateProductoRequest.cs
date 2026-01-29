@@ -2,10 +2,11 @@
 
 public record CreateProductoRequest
 {
-    public string Codigo { get; init; } = default!;
-    public string Nombre { get; init; } = default!;
-    public string? Descripcion { get; init; }
-    public decimal Precio { get; init; }
-    public bool Activo { get; init; } = true;
-    public int CategoriaId { get; init; }
+    public string Codigo { get; set; } 
+    public string Nombre { get; set; } 
+    public string? Descripcion { get; set; }
+    public decimal Precio { get; set; }
+    public bool Activo { get; set; } 
+    public int CategoriaId { get; set; }
+    public int CantidadStock { get;  set; }
 }

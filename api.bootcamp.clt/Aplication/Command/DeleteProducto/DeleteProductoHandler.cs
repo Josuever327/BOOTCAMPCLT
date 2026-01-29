@@ -1,31 +1,39 @@
-﻿using Api.BootCamp.Infraestructura.Context;
+using Api.BootCamp.Aplication.Interfaces;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
-namespace Api.BootCamp.Aplication.Command.DeleteProducto;
-
-public class DeleteProductoHandler : IRequestHandler<DeleteProductoCommand, bool>
+namespace Api.BootCamp.Aplication.Command.DeleteProducto
 {
-    private readonly PostegresDbContext _context;
-
-    public DeleteProductoHandler(PostegresDbContext context)
+    public class DeleteProductoHandler : IRequestHandler<DeleteProductoCommand, bool>
     {
-        _context = context;
-    }
+        private readonly IProductoRepository _repository;
+        private readonly ILogger<DeleteProductoHandler> _logger;
 
-    public async Task<bool> Handle(DeleteProductoCommand request, CancellationToken cancellationToken)
-    {
-        var entity = await _context.Productos
-            .FirstOrDefaultAsync(p => p.Id == request.Id, cancellationToken);
+        public DeleteProductoHandler(
+            IProductoRepository repository,
+            ILogger<DeleteProductoHandler> logger)
+        {
+            _repository = repository;
+            _logger = logger;
+        }
 
-        if (entity is null)
-            return false;
+        public async Task<bool> Handle(DeleteProductoCommand request, CancellationToken cancellationToken)
+        {
+            _logger.LogInformation("Intentando eliminar producto Id={Id}", request.Id);
 
-        entity.Activo = false;
-        entity.FechaActualizacion = DateTime.UtcNow;
+            var entity = await _repository.GetByIdAsync(request.Id, cancellationToken);
+            if (entity is null)
+            {
+                _logger.LogWarning("Delete fallido. Producto no encontrado Id={Id}", request.Id);
+                return false;
+            }
 
-        await _context.SaveChangesAsync(cancellationToken);
+            entity.Activo = false;
+            entity.FechaActualizacion = DateTime.UtcNow;
 
-        return true;
+            await _repository.UpdateAsync(entity, cancellationToken);
+
+            _logger.LogInformation("Producto Id={Id} desactivado correctamente", request.Id);
+            return true;
+        }
     }
 }

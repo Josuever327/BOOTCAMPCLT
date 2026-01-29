@@ -1,28 +1,27 @@
 ﻿using Api.BootCamp.Api.Response;
-using Api.BootCamp.Infraestructura.Context;
+using Api.BootCamp.Aplication.Interfaces;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
-namespace Api.BootCamp.Aplication.Query.GetProductos;
-
-public class GetProductosHandler : IRequestHandler<GetProductosQuery, IEnumerable<ProductoResponse>>
+namespace Api.BootCamp.Aplication.Query.GetProductos
 {
-    private readonly PostegresDbContext _context;
-
-    public GetProductosHandler(PostegresDbContext context)
+    public class GetProductosHandler : IRequestHandler<GetProductosQuery, IEnumerable<ProductoResponse>>
     {
-        _context = context;
-    }
+        private readonly IProductoRepository _repository;
+        private readonly ILogger<GetProductosHandler> _logger;
 
-    public async Task<IEnumerable<ProductoResponse>> Handle(GetProductosQuery request, CancellationToken cancellationToken)
-    {
-        var query = _context.Productos.AsNoTracking();
+        public GetProductosHandler(IProductoRepository repository, ILogger<GetProductosHandler> logger)
+        {
+            _repository = repository;
+            _logger = logger;
+        }
 
-        if (request.CategoriaId.HasValue)
-            query = query.Where(p => p.CategoriaId == request.CategoriaId.Value);
+        public async Task<IEnumerable<ProductoResponse>> Handle(GetProductosQuery request, CancellationToken cancellationToken)
+        {
+            _logger.LogInformation("Obteniendo productos. CategoriaId={CategoriaId}", request.CategoriaId);
 
-        return await query
-            .Select(p => new ProductoResponse(
+            var productos = await _repository.GetAllAsync(request.CategoriaId, cancellationToken);
+
+            return productos.Select(p => new ProductoResponse(
                 p.Id,
                 p.Codigo,
                 p.Nombre,
@@ -32,7 +31,8 @@ public class GetProductosHandler : IRequestHandler<GetProductosQuery, IEnumerabl
                 p.CategoriaId,
                 p.FechaCreacion,
                 p.FechaActualizacion,
-                p.CantidadStock))
-            .ToListAsync(cancellationToken);
+                p.CantidadStock
+            ));
+        }
     }
 }

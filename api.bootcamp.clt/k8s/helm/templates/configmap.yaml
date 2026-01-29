@@ -3,6 +3,7 @@ kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}-env
 data:
-  ASPNETCORE_ENVIRONMENT: "Development"
+  ASPNETCORE_ENVIRONMENT: "{{ .Values.app.env.aspnetcoreEnvironment }}"
   ASPNETCORE_URLS: "http://+:8080"
   ApplicationName: "{{ .Values.app.env.applicationName }}"
+  Seq__ServerUrl: "{{ .Values.seq.serverUrl }}"
