@@ -1,7 +1,7 @@
 ﻿using Api.BootCamp.Domain.Entity;
 using Microsoft.EntityFrameworkCore;
 
-namespace Api.BootCamp.Infrastructura.Context
+namespace Api.BootCamp.Infraestructura.Context
 {
     public class PostegresDbContext : DbContext
     {

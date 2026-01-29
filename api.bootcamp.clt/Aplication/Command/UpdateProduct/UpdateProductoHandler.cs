@@ -2,72 +2,63 @@
 using Api.BootCamp.Aplication.Interfaces;
 using MediatR;
 
-namespace api.bootcamp.clt.Application.Commands.UpdateProducto;
-
-public class UpdateProductoHandler : IRequestHandler<UpdateProductoCommand, ProductoResponse?>
+namespace Api.BootCamp.Aplication.Command.UpdateProducto
 {
-    private readonly IProductoRepository _repository;
-
-    private readonly ILogger<UpdateProductoHandler> _logger;
-
-    public UpdateProductoHandler(
-        IProductoRepository repository,
-        ILogger<UpdateProductoHandler> logger)
+    public class UpdateProductoHandler : IRequestHandler<UpdateProductoCommand, ProductoResponse?>
     {
-        _repository = repository;
-        _logger = logger;
-    }
+        private readonly IProductoRepository _repository;
+        private readonly ILogger<UpdateProductoHandler> _logger;
 
-
-    public async Task<ProductoResponse?> Handle(UpdateProductoCommand request, CancellationToken cancellationToken)
-    {
-        request.Validate();
-        _logger.LogInformation(
-    "Actualizando producto Id={Id}",
-    request.Id
-);
-
-        var categoriaExiste = await _repository
-            .CategoriaExisteAsync(request.CategoriaId, cancellationToken);
-
-        if (!categoriaExiste)
-            throw new ArgumentException("La categoría no existe");
-
-        var entity = await _repository.GetByIdAsync(request.Id, cancellationToken);
-      
-        if (entity is null)
+        public UpdateProductoHandler(
+            IProductoRepository repository,
+            ILogger<UpdateProductoHandler> logger)
         {
-            _logger.LogWarning(
-                "Producto no encontrado. Id={Id}",
-                request.Id
-            );
-            return null;
+            _repository = repository;
+            _logger = logger;
         }
 
+        public async Task<ProductoResponse?> Handle(UpdateProductoCommand request, CancellationToken cancellationToken)
+        {
+            request.Validate();
 
-        entity.Codigo = request.Codigo;
-        entity.Nombre = request.Nombre;
-        entity.Descripcion = request.Descripcion;
-        entity.Precio = request.Precio;
-        entity.Activo = request.Activo;
-        entity.CategoriaId = request.CategoriaId;
-        entity.CantidadStock = request.CantidadStock;
-        entity.FechaActualizacion = DateTime.UtcNow;
+            _logger.LogInformation("Actualizando producto Id={Id}", request.Id);
 
-        await _repository.UpdateAsync(entity, cancellationToken);
+            if (!await _repository.CategoriaExisteAsync(request.CategoriaId, cancellationToken))
+            {
+                _logger.LogWarning("La categoría Id={CategoriaId} no existe", request.CategoriaId);
+                throw new ArgumentException("La categoría no existe");
+            }
 
-        return new ProductoResponse(
-            entity.Id,
-            entity.Codigo,
-            entity.Nombre,
-            entity.Descripcion ?? string.Empty,
-            entity.Precio,
-            entity.Activo,
-            entity.CategoriaId,
-            entity.FechaCreacion,
-            entity.FechaActualizacion,
-            entity.CantidadStock
-        );
+            var entity = await _repository.GetByIdAsync(request.Id, cancellationToken);
+            if (entity is null)
+            {
+                _logger.LogWarning("Producto no encontrado. Id={Id}", request.Id);
+                return null;
+            }
+
+            entity.Codigo = request.Codigo;
+            entity.Nombre = request.Nombre;
+            entity.Descripcion = request.Descripcion;
+            entity.Precio = request.Precio;
+            entity.Activo = request.Activo;
+            entity.CategoriaId = request.CategoriaId;
+            entity.CantidadStock = request.CantidadStock;
+            entity.FechaActualizacion = DateTime.UtcNow;
+
+            await _repository.UpdateAsync(entity, cancellationToken);
+
+            return new ProductoResponse(
+                entity.Id,
+                entity.Codigo,
+                entity.Nombre,
+                entity.Descripcion ?? string.Empty,
+                entity.Precio,
+                entity.Activo,
+                entity.CategoriaId,
+                entity.FechaCreacion,
+                entity.FechaActualizacion,
+                entity.CantidadStock
+            );
+        }
     }
-
 }

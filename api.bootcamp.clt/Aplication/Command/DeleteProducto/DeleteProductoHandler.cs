@@ -1,38 +1,39 @@
-﻿using Api.BootCamp.Aplication.Interfaces;
+using Api.BootCamp.Aplication.Interfaces;
 using MediatR;
 
-namespace Api.BootCamp.Aplication.Command.DeleteProducto;
-
-public class DeleteProductoHandler : IRequestHandler<DeleteProductoCommand, bool>
+namespace Api.BootCamp.Aplication.Command.DeleteProducto
 {
-    private readonly IProductoRepository _repository;
-
-    private readonly ILogger<DeleteProductoHandler> _logger;
-
-    public DeleteProductoHandler(
-        IProductoRepository repository,
-        ILogger<DeleteProductoHandler> logger)
+    public class DeleteProductoHandler : IRequestHandler<DeleteProductoCommand, bool>
     {
-        _repository = repository;
-        _logger = logger;
-    }
+        private readonly IProductoRepository _repository;
+        private readonly ILogger<DeleteProductoHandler> _logger;
 
-    public async Task<bool> Handle(DeleteProductoCommand request, CancellationToken cancellationToken)
-    {
-        var entity = await _repository.GetByIdAsync(request.Id, cancellationToken);
-        _logger.LogInformation( "Eliminando producto Id={Id}", request.Id);
-        if (entity is null)
+        public DeleteProductoHandler(
+            IProductoRepository repository,
+            ILogger<DeleteProductoHandler> logger)
         {
-            _logger.LogWarning( "Delete fallido. Producto no encontrado Id={Id}",request.Id );
-            return false;
+            _repository = repository;
+            _logger = logger;
         }
-;
 
-        entity.Activo = false;
-        entity.FechaActualizacion = DateTime.UtcNow;
+        public async Task<bool> Handle(DeleteProductoCommand request, CancellationToken cancellationToken)
+        {
+            _logger.LogInformation("Intentando eliminar producto Id={Id}", request.Id);
 
-        await _repository.UpdateAsync(entity, cancellationToken);
+            var entity = await _repository.GetByIdAsync(request.Id, cancellationToken);
+            if (entity is null)
+            {
+                _logger.LogWarning("Delete fallido. Producto no encontrado Id={Id}", request.Id);
+                return false;
+            }
 
-        return true;
+            entity.Activo = false;
+            entity.FechaActualizacion = DateTime.UtcNow;
+
+            await _repository.UpdateAsync(entity, cancellationToken);
+
+            _logger.LogInformation("Producto Id={Id} desactivado correctamente", request.Id);
+            return true;
+        }
     }
 }
